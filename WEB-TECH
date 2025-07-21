@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Civic Connect</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Lato', sans-serif;
+        }
+        .landing-page {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background-image: url('https://images.pexels.com/photos/3052361/pexels-photo-3052361.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            text-align: center;
+        }
+        .header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .menu button {
+            font-size: 18px;
+            padding: 10px 20px;
+            background-color: transparent;
+            border: 2px solid white;
+            color: white;
+            cursor: pointer;
+        }
+        .menu button:hover {
+            background-color: white;
+            color: black;
+        }
+        .welcome {
+            margin: auto;
+            padding: 20px;
+        }
+        .welcome p {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .welcome h1 {
+            font-size: 48px;
+            line-height: 1.2;
+            font-weight: bold;
+        }
+        .auth-page {
+            height: 100vh;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #dff0d8; /* Pistachio green */
+            text-align: center;
+        }
+        .auth-page h1 {
+            font-size: 36px;
+            margin-bottom: 20px;
+        }
+        .auth-page form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .auth-page input {
+            font-size: 18px;
+            margin: 10px 0;
+            padding: 10px;
+            width: 250px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .auth-page button {
+            font-size: 18px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .auth-page button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <!-- Landing Page -->
+    <div class="landing-page">
+        <header class="header">
+            <div class="logo">Civic Connect</div>
+            <nav class="menu">
+                <button onclick="showAuthPage()">Login</button>
+            </nav>
+        </header>
+        <main class="welcome">
+            <p>Connect with Us</p>
+            <h1>Welcome to Civic Connect, where citizens and municipal authorities come together to address community issues efficiently and effectively.</h1>
+        </main>
+    </div>
+
+    <!-- Login/Register Page -->
+    <div class="auth-page" id="authPage">
+        <h1>Login or Register</h1>
+        <form id="authForm">
+            <input type="text" placeholder="Username" required>
+            <input type="password" placeholder="Password" required>
+            <button type="submit">Login</button>
+        </form>
+        <p>Don't have an account? <button onclick="toggleRegister()">Register</button></p>
+    </div>
+
+    <script>
+        const authPage = document.getElementById('authPage');
+        const authForm = document.getElementById('authForm');
+        
+        function showAuthPage() {
+            document.querySelector('.landing-page').style.display = 'none';
+            authPage.style.display = 'flex';
+        }
+
+        function toggleRegister() {
+            authForm.innerHTML = `
+                <input type="text" placeholder="Username" required>
+                <input type="email" placeholder="Email" required>
+                <input type="password" placeholder="Password" required>
+                <button type="submit">Register</button>
+                <p>Already have an account? <button onclick="toggleLogin()">Login</button></p>
+            `;
+        }
+
+        function toggleLogin() {
+            authForm.innerHTML = `
+                <input type="text" placeholder="Username" required>
+                <input type="password" placeholder="Password" required>
+                <button type="submit">Login</button>
+                <p>Don't have an account? <button onclick="toggleRegister()">Register</button></p>
+            `;
+        }
+    </script>
+</body>
+</html>
