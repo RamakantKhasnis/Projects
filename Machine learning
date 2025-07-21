@@ -1,0 +1,47 @@
+# Mount Google Drive to access your dataset and model
+from google.colab import drive
+drive.mount('/content/drive')
+
+# Unzip the dataset from Google Drive
+from zipfile import ZipFile
+
+zip_path = "/content/drive/MyDrive/Aquarium Combined.v2-raw-1024.yolov11.zip"
+with ZipFile(zip_path, 'r') as zip_ref:
+    zip_ref.extractall('/content/My_folder_extracted')
+
+print("Unzipping complete!")
+
+# Install Ultralytics YOLOv11 library
+!pip install ultralytics
+
+# Import YOLOv11 model and torch
+import torch
+from ultralytics import YOLO
+
+# Load a pre-trained YOLOv11 model (replace with your actual .pt path if needed)
+model = YOLO("/content/yolo11n.pt")
+
+# Check if GPU is available
+devicee = "cuda" if torch.cuda.is_available() else "cpu"
+print(f"Using device: {devicee}")
+
+# Train the model
+model.train(
+    data="/content/My_folder_extracted/data.yaml",  # Path to your data.yaml
+    imgsz=640,                                       # Image size
+    batch=40,                                        # Batch size
+    epochs=100,                                      # Number of training epochs
+    device=devicee                                   # Use GPU or CPU
+)
+
+# Load the best trained weights after training
+model = YOLO("/content/runs/detect/train/weights/best.pt")
+
+# Perform prediction on a test image
+results = model.predict(
+    source="/content/IMG_2319_jpeg_jpg.rf.6e20bf97d17b74a8948aa48776c40454.jpg",  # Test image path
+    show=True,   # Show image with bounding boxes
+    save=True,   # Save prediction result
+    conf=0.4     # Confidence threshold
+)
+
