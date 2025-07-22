@@ -1,0 +1,124 @@
+------  Smart Contract: SSI.sol ---------- 
+  
+  // SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract SSI {
+    struct Credential {
+        string did;
+        string credentialHash;
+        address issuer;
+    }
+
+    mapping(address => Credential) public credentials;
+
+    function registerDID(string memory _did, string memory _credentialHash) public {
+        credentials[msg.sender] = Credential(_did, _credentialHash, msg.sender);
+    }
+
+    function getCredential(address _user) public view returns (string memory, string memory, address) {
+        Credential memory cred = credentials[_user];
+        return (cred.did, cred.credentialHash, cred.issuer);
+    }
+}
+
+  ---------Frontend: index.html------------
+  
+  <!DOCTYPE html>
+<html>
+<head>
+  <title>SSI DApp</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Self-Sovereign Identity</h1>
+  <div>
+    <input id="did" placeholder="Enter DID" />
+    <input id="credHash" placeholder="Enter Credential Hash" />
+    <button onclick="registerDID()">Register Identity</button>
+  </div>
+  <div>
+    <input id="lookup" placeholder="Enter Address to Lookup" />
+    <button onclick="getCredential()">Get Credential</button>
+    <p id="output"></p>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
+
+
+  --------Styles: style.css------------  
+  body {
+  font-family: Arial;
+  background-color: #f0f0f0;
+  padding: 20px;
+}
+input {
+  margin: 5px;
+  padding: 10px;
+}
+button {
+  padding: 10px 15px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+}
+
+
+  --------Web3 Logic: app.js --------
+  
+  let web3;
+let contract;
+const contractAddress = 'YOUR_DEPLOYED_CONTRACT_ADDRESS';
+const contractABI = [
+  {
+    "inputs": [
+      {"internalType":"string","name":"_did","type":"string"},
+      {"internalType":"string","name":"_credentialHash","type":"string"}
+    ],
+    "name":"registerDID",
+    "outputs":[],
+    "stateMutability":"nonpayable",
+    "type":"function"
+  },
+  {
+    "inputs":[{"internalType":"address","name":"_user","type":"address"}],
+    "name":"getCredential",
+    "outputs":[
+      {"internalType":"string","name":"","type":"string"},
+      {"internalType":"string","name":"","type":"string"},
+      {"internalType":"address","name":"","type":"address"}
+    ],
+    "stateMutability":"view",
+    "type":"function"
+  }
+];
+
+window.addEventListener('load', async () => {
+  if (window.ethereum) {
+    web3 = new Web3(window.ethereum);
+    await window.ethereum.request({ method: 'eth_requestAccounts' });
+    contract = new web3.eth.Contract(contractABI, contractAddress);
+  } else {
+    alert("Please install MetaMask");
+  }
+});
+
+async function registerDID() {
+  const did = document.getElementById("did").value;
+  const credHash = document.getElementById("credHash").value;
+  const accounts = await web3.eth.getAccounts();
+  await contract.methods.registerDID(did, credHash).send({ from: accounts[0] });
+  alert("DID Registered!");
+}
+
+async function getCredential() {
+  const address = document.getElementById("lookup").value;
+  const result = await contract.methods.getCredential(address).call();
+  document.getElementById("output").innerText = `
+    DID: ${result[0]} 
+    Credential Hash: ${result[1]} 
+    Issuer: ${result[2]}
+  `;
+}
