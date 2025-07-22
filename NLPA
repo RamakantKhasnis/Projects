@@ -1,0 +1,103 @@
+ ----- main.py ------
+# timetable_scheduler/main.py
+
+import pandas as pd
+from round_robin import allocate_faculty_round_robin
+from solver import generate_schedule
+
+def main():
+    # Load and preprocess data
+    df = pd.read_csv("data/semester_data.csv")
+    print("Loaded input CSV with", len(df), "entries.")
+
+    # Phase 1: Round-Robin Allocation
+    allocated_df = allocate_faculty_round_robin(df)
+    print("Completed Round-Robin allocation.")
+
+    # Phase 2: Constraint Optimization using OR-Tools
+    final_schedule = generate_schedule(allocated_df)
+    print("Schedule optimized using CP-SAT solver.")
+
+    # Output to CSV
+    final_schedule.to_csv("output/final_schedule.csv", index=False)
+    print("Timetable saved to output/final_schedule.csv")
+
+if __name__ == "__main__":
+    main()
+
+------  round_robin.py ---------- 
+# round_robin.py
+
+from collections import deque
+import pandas as pd
+
+def allocate_faculty_round_robin(df):
+    divisions = df['Division'].unique()
+    courses = df['Course Code'].unique()
+
+    schedule_rows = []
+    for course in courses:
+        course_df = df[df['Course Code'] == course]
+        faculty_list = list(set(','.join(course_df['Faculty']).replace(" ", "").split(',')))
+        queue = deque(faculty_list)
+
+        for division in divisions:
+            sub_df = course_df[course_df['Division'] == division]
+            if sub_df.empty:
+                continue
+
+            row = sub_df.iloc[0].to_dict()
+            faculty = queue[0]
+            row['Assigned Faculty'] = faculty
+            schedule_rows.append(row)
+
+            queue.rotate(-1)  # rotate the queue
+
+    return pd.DataFrame(schedule_rows)
+
+
+------------  solver.py ------------ 
+# solver.py
+
+from ortools.sat.python import cp_model
+import pandas as pd
+
+def generate_schedule(df):
+    model = cp_model.CpModel()
+    schedule = []
+
+    # Encode unique time slots
+    time_slots = {t: i for i, t in enumerate(df['Time Slot'].unique())}
+    days = {d: i for i, d in enumerate(df['Day'].unique())}
+    divisions = df['Division'].unique()
+
+    # Variables
+    class_vars = {}
+    for idx, row in df.iterrows():
+        var = model.NewIntVar(0, len(time_slots)-1, f'class_{idx}')
+        class_vars[idx] = var
+
+    # Constraints
+    for i in range(len(df)):
+        for j in range(i + 1, len(df)):
+            if df.loc[i, 'Division'] == df.loc[j, 'Division'] or df.loc[i, 'Assigned Faculty'] == df.loc[j, 'Assigned Faculty']:
+                model.Add(class_vars[i] != class_vars[j])  # avoid conflicts
+
+    # Objective: not used here, can be extended
+
+    # Solve
+    solver = cp_model.CpSolver()
+    status = solver.Solve(model)
+
+    if status in (cp_model.FEASIBLE, cp_model.OPTIMAL):
+        for idx, var in class_vars.items():
+            time_index = solver.Value(var)
+            row = df.iloc[idx].to_dict()
+            row['Scheduled Slot'] = list(time_slots.keys())[time_index]
+            schedule.append(row)
+    else:
+        print("No feasible solution found.")
+        return df
+
+    return pd.DataFrame(schedule)
+
